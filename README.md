@@ -2,57 +2,102 @@
 
 Deploy a multi-agent system with Docker.
 
+[What is AgentOS?](https://docs.agno.com/agent-os/introduction) · [Agno Docs](https://docs.agno.com) · [Discord](https://agno.com/discord)
+
+---
+
 ## What's Included
 
 | Agent | Pattern | Description |
 |-------|---------|-------------|
-| Knowledge Agent | Agentic RAG | Answers questions from a knowledge base. |
-| MCP Agent | MCP Tool Use | Connects to external services via MCP. |
+| **Pal** | Learning + Tools | Your AI-powered second brain |
+| Knowledge Agent | RAG | Answers questions from a knowledge base |
+| MCP Agent | Tool Use | Connects to external services via MCP |
+
+---
 
 ## Get Started
 
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [OpenAI API key](https://platform.openai.com/api-keys)
+
+### 1. Clone and configure
+
 ```sh
-# Clone the repo
 git clone https://github.com/agno-agi/agentos-docker-template.git agentos-docker
 cd agentos-docker
-
-# Add OPENAI_API_KEY
 cp example.env .env
-# Edit .env and add your key
+# Add your OPENAI_API_KEY to .env
+```
 
-# Start the application
+### 2. Start locally
+
+```sh
 docker compose up -d --build
 
 # Load documents for the knowledge agent
 docker exec -it agentos-api python -m agents.knowledge_agent
 ```
 
-Confirm AgentOS is running at [http://localhost:8000/docs](http://localhost:8000/docs).
+- **API**: http://localhost:8000
+- **Docs**: http://localhost:8000/docs
+- **Database**: localhost:5432
 
-### Connect to the Web UI
+### 3. Connect to control plane
 
-1. Open [os.agno.com](https://os.agno.com) and login
-2. Add OS → Local → `http://localhost:8000`
-3. Click "Connect"
+1. Open [os.agno.com](https://os.agno.com)
+2. Click "Add OS" → "Local"
+3. Enter `http://localhost:8000`
+
+---
 
 ## The Agents
 
-### Knowledge Agent
+### Pal (Personal Agent that Learns)
 
-Answers questions using hybrid search over a vector database (Agentic RAG).
+Your AI-powered second brain. Pal researches, captures, organizes, connects, and retrieves your personal knowledge - so nothing useful is ever lost.
 
-**Load documents:**
+**What Pal stores:**
 
-```sh
-docker exec -it agentos-api python -m agents.knowledge_agent
-```
+| Type | Examples |
+|------|----------|
+| **Notes** | Ideas, decisions, snippets, learnings |
+| **Bookmarks** | URLs with context - why you saved it |
+| **People** | Contacts - who they are, how you know them |
+| **Meetings** | Notes, decisions, action items |
+| **Projects** | Goals, status, related items |
+| **Research** | Findings from web search, saved for later |
 
 **Try it:**
+```
+Note: decided to use Postgres for the new project - better JSON support
+Bookmark https://www.ashpreetbedi.com/articles/lm-technical-design - great intro
+Research event sourcing patterns and save the key findings
+What notes do I have?
+What do I know about event sourcing?
+```
 
+**How it works:**
+- **DuckDB** stores your actual data (notes, bookmarks, people, etc.)
+- **Learning system** remembers schemas and research findings
+- **Exa search** powers web research, company lookup, and people search
+
+**Data persistence:** Pal stores structured data in DuckDB at `/data/pal.db`. This persists across container restarts.
+
+### Knowledge Agent
+
+Answers questions using a vector knowledge base (RAG pattern).
+
+**Try it:**
 ```
 What is Agno?
 How do I create my first agent?
 What documents are in your knowledge base?
+```
+
+**Load documents:**
+```sh
+docker exec -it agentos-api python -m agents.knowledge_agent
 ```
 
 ### MCP Agent
@@ -60,23 +105,26 @@ What documents are in your knowledge base?
 Connects to external tools via the Model Context Protocol.
 
 **Try it:**
-
 ```
 What tools do you have access to?
 Search the docs for how to use LearningMachine
 Find examples of agents with memory
 ```
 
+---
+
 ## Project Structure
+
 ```
-├── agents/                  # Agents
-│   ├── knowledge_agent.py   # Agentic RAG
-│   └── mcp_agent.py         # MCP Tool Use
+├── agents/
+│   ├── pal.py               # Personal second brain agent
+│   ├── knowledge_agent.py   # RAG agent
+│   └── mcp_agent.py         # MCP tools agent
 ├── app/
 │   ├── main.py              # AgentOS entry point
 │   └── config.yaml          # Quick prompts config
 ├── db/
-│   ├── session.py           # PostgreSQL database helpers
+│   ├── session.py           # Database session helpers
 │   └── url.py               # Connection URL builder
 ├── scripts/                 # Helper scripts
 ├── compose.yaml             # Docker Compose config
@@ -84,12 +132,13 @@ Find examples of agents with memory
 └── pyproject.toml           # Dependencies
 ```
 
+---
+
 ## Common Tasks
 
 ### Add your own agent
 
 1. Create `agents/my_agent.py`:
-
 ```python
 from agno.agent import Agent
 from agno.models.openai import OpenAIResponses
@@ -105,13 +154,12 @@ my_agent = Agent(
 ```
 
 2. Register in `app/main.py`:
-
 ```python
 from agents.my_agent import my_agent
 
 agent_os = AgentOS(
     name="AgentOS",
-    agents=[knowledge_agent, mcp_agent, my_agent],
+    agents=[pal, knowledge_agent, mcp_agent, my_agent],
     ...
 )
 ```
@@ -121,7 +169,6 @@ agent_os = AgentOS(
 ### Add tools to an agent
 
 Agno includes 100+ tool integrations. See the [full list](https://docs.agno.com/tools/toolkits).
-
 ```python
 from agno.tools.slack import SlackTools
 from agno.tools.google_calendar import GoogleCalendarTools
@@ -145,7 +192,6 @@ my_agent = Agent(
 
 1. Add your API key to `.env` (e.g., `ANTHROPIC_API_KEY`)
 2. Update agents to use the new provider:
-
 ```python
 from agno.models.anthropic import Claude
 
@@ -158,7 +204,6 @@ model=Claude(id="claude-sonnet-4-5")
 ## Local Development
 
 For development without Docker:
-
 ```sh
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -174,21 +219,71 @@ docker compose up -d agentos-db
 python -m app.main
 ```
 
+---
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `OPENAI_API_KEY` | Yes | - | OpenAI API key |
-| `PORT` | No | `8000` | API server port |
+| `EXA_API_KEY` | No | - | Exa API key for web research |
 | `DB_HOST` | No | `localhost` | Database host |
 | `DB_PORT` | No | `5432` | Database port |
 | `DB_USER` | No | `ai` | Database user |
 | `DB_PASS` | No | `ai` | Database password |
 | `DB_DATABASE` | No | `ai` | Database name |
+| `DATA_DIR` | No | `/data` | Directory for DuckDB storage |
 | `RUNTIME_ENV` | No | `prd` | Set to `dev` for auto-reload |
+
+---
+
+## Extending Pal
+
+Pal is designed to be extended. Connect it to your existing tools:
+
+### Communication
+```python
+from agno.tools.slack import SlackTools
+from agno.tools.gmail import GmailTools
+
+tools=[
+    ...
+    SlackTools(),    # Capture decisions from Slack
+    GmailTools(),    # Track important emails
+]
+```
+
+### Productivity
+```python
+from agno.tools.google_calendar import GoogleCalendarTools
+from agno.tools.linear import LinearTools
+
+tools=[
+    ...
+    GoogleCalendarTools(),  # Meeting context
+    LinearTools(),          # Project tracking
+]
+```
+
+### Research
+```python
+from agno.tools.yfinance import YFinanceTools
+from agno.tools.github import GithubTools
+
+tools=[
+    ...
+    YFinanceTools(),  # Financial data
+    GithubTools(),    # Code and repos
+]
+```
+
+See the [Agno Tools documentation](https://docs.agno.com/tools/toolkits) for the full list of available integrations.
+
+---
 
 ## Learn More
 
 - [Agno Documentation](https://docs.agno.com)
 - [AgentOS Documentation](https://docs.agno.com/agent-os/introduction)
-- [Agno Discord](https://agno.com/discord)
+- [Tools & Integrations](https://docs.agno.com/tools/toolkits)
+- [Discord Community](https://agno.com/discord)

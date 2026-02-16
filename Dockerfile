@@ -10,8 +10,14 @@ ENV PYTHONUNBUFFERED=1 \
 # ---------------------------------------------------------------------------
 # Create non-root user
 # ---------------------------------------------------------------------------
-RUN groupadd -g 61000 app \
-    && useradd -g 61000 -u 61000 -ms /bin/bash app
+ARG USER=app
+ARG APP_DIR=/app
+ARG DATA_DIR=/data
+
+RUN groupadd -g 61000 ${USER} \
+    && useradd -g 61000 -u 61000 -ms /bin/bash -d ${APP_DIR} ${USER} \
+    && mkdir -p ${DATA_DIR} \
+    && chown -R ${USER}:${USER} ${DATA_DIR}
 
 # ---------------------------------------------------------------------------
 # Application code

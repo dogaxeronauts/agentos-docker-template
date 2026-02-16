@@ -26,20 +26,20 @@ services:
     volumes:
       # Hot-reload: mount source code
       - .:/app
+      - agentos-data:/data
     environment:
-      - RUNTIME_ENV=dev
-      - AGNO_DEBUG=True
-      - PYTHONPATH=/app
-      # Database
-      - DB_HOST=agentos-db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER:-ai}
-      - DB_PASS=${DB_PASS:-ai}
-      - DB_DATABASE=${DB_DATABASE:-ai}
-      - WAIT_FOR_DB=True
-      - PRINT_ENV_ON_LOAD=True
-      # API keys
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      DATA_DIR: /data
+      RUNTIME_ENV: dev
+      AGNO_DEBUG: "True"
+      DB_HOST: agentos-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ai}
+      DB_PASS: ${DB_PASS:-ai}
+      DB_DATABASE: ${DB_DATABASE:-ai}
+      WAIT_FOR_DB: "True"
+      PRINT_ENV_ON_LOAD: "True"
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      EXA_API_KEY: ${EXA_API_KEY:-}
     depends_on:
       - agentos-db
     networks:
@@ -52,3 +52,4 @@ networks:
 
 volumes:
   pgdata:
+  agentos-data:
