@@ -15,9 +15,6 @@ from db.url import db_url
 DB_ID = "agentos-db"
 
 
-# ---------------------------------------------------------------------------
-# Agno database helpers
-# ---------------------------------------------------------------------------
 def get_postgres_db(contents_table: str | None = None) -> PostgresDb:
     """Create a PostgresDb instance.
 
