@@ -1,20 +1,19 @@
 [project]
 name = "agentos-docker"
 version = "1.0.0"
-requires-python = ">=3.11,<4"
+requires-python = ">=3.12,<4"
 readme = "README.md"
 license-files = ["LICENSE"]
 authors = [{ name = "Agno", email = "hello@agno.com" }]
 
 dependencies = [
-  "agno==2.4.0",
-  "agno-infra==1.0.4",
+  "agno",
   "fastapi[standard]",
   "openai",
   "pgvector",
   "psycopg[binary]",
   "sqlalchemy",
-  "mcp"
+  "mcp",
 ]
 
 [project.optional-dependencies]
@@ -25,12 +24,13 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
+include = ["agents*", "db*", "app*"]
 
 [tool.ruff]
 line-length = 120
 exclude = [".venv*"]
+
 [tool.ruff.lint.per-file-ignores]
-# Ignore `F401` (import violations) in all `__init__.py` files
 "__init__.py" = ["F401", "F403"]
 
 [tool.mypy]
@@ -41,7 +41,7 @@ plugins = ["pydantic.mypy"]
 exclude = [".venv*"]
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "setuptools.*", "agno.*"]
+module = ["pgvector.*", "setuptools.*", "agno.*", "httpx.*", "mcp.*"]
 ignore_missing_imports = true
 
 [tool.uv.pip]

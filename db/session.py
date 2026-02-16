@@ -1,38 +1,51 @@
 """
 Database Session
-================
+----------------
 
-Database connection and session management.
+PostgreSQL database connection for AgentOS.
 """
 
-from typing import Generator
-
 from agno.db.postgres import PostgresDb
-from sqlalchemy.engine import Engine, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from agno.knowledge import Knowledge
+from agno.knowledge.embedder.openai import OpenAIEmbedder
+from agno.vectordb.pgvector import PgVector, SearchType
 
-from db.url import get_db_url
+from db.url import db_url
 
-# ============================================================================
-# Database Setup
-# ============================================================================
-db_url: str = get_db_url()
-db_engine: Engine = create_engine(db_url, pool_pre_ping=True)
-SessionLocal: sessionmaker[Session] = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+DB_ID = "agentos-db"
 
 
-# ============================================================================
-# Database Helpers
-# ============================================================================
-def get_postgres_db() -> PostgresDb:
-    """Create a PostgresDb instance for agents."""
-    return PostgresDb(db_url=db_url)
+def get_postgres_db(contents_table: str | None = None) -> PostgresDb:
+    """Create a PostgresDb instance.
+
+    Args:
+        contents_table: Optional table name for storing knowledge contents.
+
+    Returns:
+        Configured PostgresDb instance.
+    """
+    if contents_table is not None:
+        return PostgresDb(id=DB_ID, db_url=db_url, knowledge_table=contents_table)
+    return PostgresDb(id=DB_ID, db_url=db_url)
 
 
-def get_db() -> Generator[Session, None, None]:
-    """Dependency to get a database session."""
-    db: Session = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def create_knowledge(name: str, table_name: str) -> Knowledge:
+    """Create a Knowledge instance with PgVector hybrid search.
+
+    Args:
+        name: Display name for the knowledge base.
+        table_name: PostgreSQL table name for vector storage.
+
+    Returns:
+        Configured Knowledge instance.
+    """
+    return Knowledge(
+        name=name,
+        vector_db=PgVector(
+            db_url=db_url,
+            table_name=table_name,
+            search_type=SearchType.hybrid,
+            embedder=OpenAIEmbedder(id="text-embedding-3-small"),
+        ),
+        contents_db=get_postgres_db(contents_table=f"{table_name}_contents"),
+    )
